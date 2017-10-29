@@ -15,6 +15,9 @@ namespace RegisterMap
 
         #region -- Private Fields --
 
+        public const byte BackgroundColorIndex = 255;
+        public const byte UnusedColorIndex = 128;
+
         private int offsetX = 8;
         private int offsetY = 8;
 
@@ -265,13 +268,13 @@ namespace RegisterMap
 
                     if (DecayMode)
                     {
-                        if (animationMap[i] < 128)
+                        if (animationMap[i] < UnusedColorIndex)
                         {
                             animationMap[i] += decaySpeed;
                             redraw = true;
                         }
                     }
-                    else if (animationMap[i] < 128)
+                    else if (animationMap[i] < UnusedColorIndex)
                     {
                         animationMap[i] = 0;
                         redraw = true;
@@ -303,7 +306,7 @@ namespace RegisterMap
             for (var i = 0; i < MaxAddress; i++)
             {
                 writtenMapData[i] = true;
-                animationMap[i] = (markingMode ? (byte)0 : (byte)128);
+                animationMap[i] = (markingMode ? (byte)0 : UnusedColorIndex);
             }
         }
 
@@ -315,7 +318,7 @@ namespace RegisterMap
             for (var i = 0; i < MaxAddress; i++)
             {
                 writtenMapData[i] = true;
-                animationMap[i] = 128;
+                animationMap[i] = UnusedColorIndex;
             }
         }
 
@@ -383,8 +386,8 @@ namespace RegisterMap
                 vb += db;
             }
 
-            palette.Entries[128] = unusedRegisterColor;
-            palette.Entries[255] = backgroundColor;
+            palette.Entries[UnusedColorIndex] = unusedRegisterColor;
+            palette.Entries[BackgroundColorIndex] = backgroundColor;
 
             Bitmap.Palette = palette;
         }
@@ -424,7 +427,7 @@ namespace RegisterMap
         {
             for (int iy = 0, lengthY = height; iy < lengthY; iy++)
                 for (int ix = 0, lengthX = stride; ix < lengthX; ix++)
-                    ptr[iy * stride + ix] = 255;
+                    ptr[iy * stride + ix] = BackgroundColorIndex;
         }
 
         private static unsafe void DrawCharacter(byte* ptr, int stride, int x, int y, int c, byte color)
@@ -434,7 +437,7 @@ namespace RegisterMap
 
             for (int iy = y, lengthY = y + CharacterHeight, i = 0; iy < lengthY; iy++)
                 for (int ix = x, lengthX = x + CharacterWidth; ix < lengthX; ix++, i++)
-                    ptr[iy * stride + ix] = (ch[i] == 0 ? (byte)255 : fore);
+                    ptr[iy * stride + ix] = (ch[i] == 0 ? BackgroundColorIndex : fore);
         }
 
         #endregion
