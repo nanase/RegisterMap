@@ -7,6 +7,12 @@ namespace RegisterMap
 {
     public class MapRenderer
     {
+        #region -- Public Fields --
+
+        public const int DefaultMaxAddress = 256;
+
+        #endregion
+
         #region -- Private Fields --
 
         private int offsetX = 8;
@@ -30,11 +36,11 @@ namespace RegisterMap
         private bool requestedAllDraw;
         private bool markingMode;
         private byte decaySpeed = 4;
-        private readonly byte[] mapData = new byte[256];
+        private readonly byte[] mapData;
         private readonly Rectangle bitmapRect;
         private readonly int[] dataPosition = new int[32];
-        private readonly bool[] writtenMapData = new bool[256];
-        private readonly byte[] animationMap = new byte[256];
+        private readonly bool[] writtenMapData;
+        private readonly byte[] animationMap;
 
         #endregion
 
@@ -163,7 +169,9 @@ namespace RegisterMap
             offsetX * 2 + CharacterWidth * 35 + valueSpace * 12 +
             characterSpace * 18 + SubsectionSpace * 2 + sectionSpace + AddressSpace;
 
-        public int AcctualHeight => offsetY * 2 + CharacterHeight * 16 + lineSpace * 15;
+        public int AcctualHeight => offsetY * 2 + CharacterHeight * ((int)Math.Ceiling(MaxAddress / 16.0)) + lineSpace * ((int)Math.Ceiling(MaxAddress / 16.0) - 1);
+
+        public int MaxAddress { get; }
 
         #endregion
 
@@ -194,8 +202,17 @@ namespace RegisterMap
             bitmap.UnlockBits(bdata);
         }
 
-        public MapRenderer()
+        public MapRenderer(int maxAddress = DefaultMaxAddress)
         {
+            if (maxAddress < 1 || maxAddress > DefaultMaxAddress)
+                throw new ArgumentOutOfRangeException(nameof(maxAddress));
+
+            MaxAddress = maxAddress;
+
+            mapData = new byte[MaxAddress];
+            writtenMapData = new bool[MaxAddress];
+            animationMap = new byte[MaxAddress];
+
             Bitmap = new Bitmap(AcctualWidth, AcctualHeight, PixelFormat.Format8bppIndexed);
             bitmapRect = new Rectangle(0, 0, AcctualWidth, AcctualHeight);
 
@@ -212,13 +229,13 @@ namespace RegisterMap
         {
             requestedAllDraw = true;
 
-            for (var i = 0; i < 256; i++)
+            for (var i = 0; i < MaxAddress; i++)
                 writtenMapData[i] = true;
         }
 
         public void SetData(int address, byte data)
         {
-            if (address < 0 || address > 256)
+            if (address < 0 || address > MaxAddress)
                 throw new ArgumentOutOfRangeException(nameof(address));
 
             mapData[address] = data;
@@ -242,7 +259,7 @@ namespace RegisterMap
                     requestedAllDraw = false;
                 }
 
-                for (var i = 0; i < 256; i++)
+                for (var i = 0; i < MaxAddress; i++)
                 {
                     var redraw = writtenMapData[i];
 
@@ -273,7 +290,7 @@ namespace RegisterMap
 
         public byte GetData(int address)
         {
-            if (address < 0 || address > 256)
+            if (address < 0 || address > MaxAddress)
                 throw new ArgumentOutOfRangeException(nameof(address));
 
             return mapData[address];
@@ -283,7 +300,7 @@ namespace RegisterMap
         {
             Array.Clear(mapData, 0, mapData.Length);
 
-            for (var i = 0; i < 256; i++)
+            for (var i = 0; i < MaxAddress; i++)
             {
                 writtenMapData[i] = true;
                 animationMap[i] = (markingMode ? (byte)0 : (byte)128);
@@ -295,7 +312,7 @@ namespace RegisterMap
             if (!markingMode)
                 return;
 
-            for (var i = 0; i < 256; i++)
+            for (var i = 0; i < MaxAddress; i++)
             {
                 writtenMapData[i] = true;
                 animationMap[i] = 128;
@@ -393,8 +410,9 @@ namespace RegisterMap
             FillBackground(ptr, stride, height);
             var widthChar = CharacterWidth + characterSpace;
             var heightChar = CharacterHeight + lineSpace;
+            var maxAddress = (int)Math.Ceiling(MaxAddress / 16.0);
 
-            for (var i = 0; i < 16; i++)
+            for (var i = 0; i < maxAddress; i++)
             {
                 DrawCharacter(ptr, stride, offsetX + widthChar * 0, offsetY + heightChar * i, 16, 0);
                 DrawCharacter(ptr, stride, offsetX + widthChar * 1, offsetY + heightChar * i, i, 0);
